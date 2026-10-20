@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{% if assignment %}Настройки задания{% else %}Новое задание{% endif %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_list' %}">Задания</a> /{% if assignment %} <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a> /{% endif %}</p>
+<h1>{% if assignment %}Настройки задания{% else %}Новое задание{% endif %}</h1>
+<form method="post" class="card settings">{% csrf_token %}
+  {{ form.non_field_errors }}
+  <label>{{ form.title.label }} {{ form.title }}</label>{{ form.title.errors }}
+  <label>{{ form.description.label }} {{ form.description }}</label>
+  <fieldset><legend>Классы</legend>{{ form.groups }}</fieldset>
+
+  <fieldset><legend>Сроки</legend>
+    <div class="grid3">
+      <label>{{ form.opens_at.label }} {{ form.opens_at }}</label>
+      <label>{{ form.due_at.label }} {{ form.due_at }}</label>
+      <label class="check">{{ form.allow_late }} {{ form.allow_late.label }}</label>
+    </div>
+  </fieldset>
+
+  <fieldset><legend>Что показывать ученику (для всех реакций задания)</legend>
+    <p class="muted small">Эти настройки можно изменить для отдельных реакций и отдельных веществ на странице задания.</p>
+    <label class="check">{{ form.show_reactants }} {{ form.show_reactants.label }}</label>
+    <label class="check">{{ form.show_products }} {{ form.show_products.label }}</label>
+    <label class="check">{{ form.show_count }} {{ form.show_count.label }} <span class="muted small">(ученик видит, сколько веществ нужно дописать)</span></label>
+    <label class="check">{{ form.hide_water }} {{ form.hide_water.label }} <span class="muted small">(вода не показывается — ученик сам решает, нужна ли она и с какой стороны)</span></label>
+  </fieldset>
+
+  <fieldset><legend>Результаты</legend>
+    {{ form.results_mode }}
+    <label>{{ form.results_date.label }} {{ form.results_date }}</label>{{ form.results_date.errors }}
+    <label class="check">{{ form.show_correct_answers }} {{ form.show_correct_answers.label }}</label>
+    <label class="check">{{ form.partial_credit }} {{ form.partial_credit.label }}</label>
+    <label class="check">{{ form.allow_appeals }} {{ form.allow_appeals.label }}</label>
+  </fieldset>
+  <button class="btn primary">{% if assignment %}Сохранить{% else %}Создать и выбрать реакции{% endif %}</button>
+</form>
+{% endblock %}

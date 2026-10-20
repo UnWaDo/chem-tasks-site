@@ -1,0 +1,6 @@
+{% load chem_tags %}<button type="button" data-side="{{ slot.side }}" data-water="{{ slot.component.is_water|yesno:'1,0' }}" class="chip {% if slot.source == 'override' %}{% if slot.visible %}shown{% else %}hidden{% endif %}{% else %}auto{% endif %}"
+  data-auto="{{ slot.auto_visible|yesno:'1,0' }}"
+  title="{% if slot.source == 'water' %}скрыта опцией «прятать воду»{% elif slot.source == 'auto' %}по настройке стороны{% else %}задано вручную{% endif %}">
+  <span class="chip-term">{% term None slot.formula slot.note slot.mark %}</span><span class="state"></span>
+  <input type="hidden" name="ov_{{ view.item.id }}_{{ slot.key }}" value="{% if slot.source == 'override' %}{{ slot.visible|yesno:'1,0' }}{% endif %}">
+</button>

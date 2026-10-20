@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Тэги{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'reaction_list' %}">Реакции</a> /</p>
+<h1>Тэги</h1>
+<div class="grid2">
+<section class="card">
+  <table class="table">
+    <tr><th>Тэг</th><th>Реакций</th><th></th></tr>
+    {% for t in tags %}
+    <tr>
+      <td>
+        <form method="post" class="row">{% csrf_token %}
+          <input type="hidden" name="tag" value="{{ t.pk }}">
+          <input name="name" value="{{ t.name }}" maxlength="60" aria-label="Название тэга">
+          <button class="btn small" name="action" value="rename">Переименовать</button>
+        </form>
+      </td>
+      <td><a href="{% url 'reaction_list' %}?tag={{ t.pk }}">{{ t.n }}</a></td>
+      <td>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="tag" value="{{ t.pk }}">
+          <button class="btn small danger" name="action" value="delete" data-confirm="Удалить тэг «{{ t.name }}»? Реакции останутся в базе.">Удалить</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="muted">Тэгов пока нет.</td></tr>{% endfor %}
+  </table>
+  <p class="muted small">Если переименовать тэг в уже существующее название, тэги объединятся.</p>
+</section>
+<section class="card">
+  <h2>Новые тэги</h2>
+  <form method="post">{% csrf_token %}
+    <label>Названия через запятую<input name="names" placeholder="ОВР, 9 класс, кислоты" autocomplete="off"></label>
+    <button class="btn primary" name="action" value="create">Добавить</button>
+  </form>
+  <p class="muted small">Тэги также можно создавать прямо при загрузке и редактировании реакций.</p>
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+<select name="tag" onchange="this.form.submit()" aria-label="Тэг">
+  <option value="">Все тэги</option>
+  <option value="-" {% if tag == "-" %}selected{% endif %}>Без тэгов</option>
+  {% for t in all_tags %}<option value="{{ t.pk }}" {% if tag == t.pk|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+</select>

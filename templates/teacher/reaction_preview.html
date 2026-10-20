@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Проверка загружаемых реакций{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'reaction_list' %}">Реакции</a> / <a href="{% url 'reaction_import' %}">Загрузка</a> /</p>
+<h1>Проверка перед сохранением</h1>
+<p>Строк: {{ stats.total }}. Ошибок разбора: {{ stats.errors }}. Дубликатов: {{ stats.dups }}. Требуют внимания: {{ stats.attention }}.
+  {% if tag_names %}Тэги: {% for n in tag_names %}<span class="tag">{{ n }}</span> {% endfor %}{% endif %}</p>
+<p class="muted">Отметьте, какие реакции сохранить. Для неуравненных выберите вариант коэффициентов. Дубликаты и ошибочные строки по умолчанию не отмечены.</p>
+
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="step" value="save">
+  {% for t in selected_tags %}<input type="hidden" name="tags" value="{{ t }}">{% endfor %}
+  <input type="hidden" name="new_tags" value="{{ new_tags }}">
+  <textarea name="text" hidden>{{ text }}</textarea>
+  <div class="row"><label class="inline"><input type="checkbox" data-check-all="include"> отметить все</label></div>
+  <table class="table import">
+    {% for row in rows %}
+    <tr class="{% if row.error %}bad{% elif row.db_dups or row.batch_dup %}dup{% elif not row.analysis.ok %}attn{% endif %}">
+      <td class="n">{{ row.n }}</td>
+      <td><input type="checkbox" name="include_{{ row.n }}" value="1" data-group="include" {% if row.include %}checked{% endif %} {% if row.error %}disabled{% endif %}></td>
+      <td><div class="src mono">{{ row.line }}</div>{% include "teacher/_analysis.html" %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="actions sticky">
+    <button class="btn primary">Сохранить отмеченные</button>
+    <a class="btn" href="{% url 'reaction_import' %}">Отмена</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,21 @@
+# окружение и кэш Python
+.venv/
+__pycache__/
+*.pyc
+
+# секреты и данные: в репозиторий не попадают
+.env
+db.sqlite3*
+backups/
+dump*.json
+
+# собранная статика (collectstatic)
+staticfiles/
+
+# образцы олимпиадных задач: тексты и рисунки с olimpiada.ru публиковать нельзя (см. docs/olympiad/README.md)
+docs/olympiad/samples/
+
+# локальные настройки редакторов и агентов
+.claude/settings.local.json
+.idea/
+.vscode/

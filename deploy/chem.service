@@ -1,0 +1,17 @@
+# /etc/systemd/system/chem.service
+[Unit]
+Description=Chemistry tasks site (gunicorn)
+After=network.target
+
+[Service]
+User=chem
+Group=www-data
+WorkingDirectory=/srv/chem/app
+ExecStart=/srv/chem/app/.venv/bin/gunicorn config.wsgi:application \
+    --workers 2 --threads 2 --timeout 60 \
+    --bind unix:/run/chem/gunicorn.sock --umask 007
+RuntimeDirectory=chem
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

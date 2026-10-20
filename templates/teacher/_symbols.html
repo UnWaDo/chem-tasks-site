@@ -1,0 +1,15 @@
+{# Панель вставки спецсимволов. target — id поля ввода. В data-insert «|» отмечает, где окажется курсор. #}
+<div class="symbols" data-target="{{ target }}">
+  <span class="small muted">Вставить:</span>
+  <button type="button" data-insert=" → |" title="Стрелка (необратимая)">→</button>
+  <button type="button" data-insert=" ⇄ |" title="Обратимая реакция">⇄</button>
+  <button type="button" data-insert="↑|" title="Газ">↑</button>
+  <button type="button" data-insert="↓|" title="Осадок">↓</button>
+  <button type="button" data-insert="·|" title="Кристаллогидрат: CuSO4·5H2O">·</button>
+  <button type="button" data-insert="^(|)" title="Условие над стрелкой (сразу после стрелки) или верхний индекс в подписи">над ^( )</button>
+  <button type="button" data-insert="_(|)" title="Условие под стрелкой (сразу после стрелки) или нижний индекс в подписи">под _( )</button>
+  <button type="button" data-insert="t°|" title="Нагревание">t°</button>
+  <button type="button" data-insert="hν|" title="Свет">hν</button>
+  <button type="button" data-insert="cat|" title="Катализатор (catalyst)">cat</button>
+  <button type="button" data-insert="^|-" title="Заряд иона: SO4^2- (впишите величину заряда)">заряд ^−</button>
+</div>

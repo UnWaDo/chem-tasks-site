@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'group_list' %}">Классы</a> /</p>
+<h1>{{ group.name }}</h1>
+
+<div class="grid2">
+<section class="card">
+  <h2>Ученики ({{ students|length }})</h2>
+  {% if students %}
+  <form method="post" action="{% url 'group_reset_passwords' group.pk %}" id="bulk">{% csrf_token %}</form>
+  <table class="table">
+    <tr><th><input type="checkbox" data-check-all="student"></th><th>ФИО</th><th>Логин</th><th></th></tr>
+    {% for st in students %}
+    <tr class="{% if not st.user.is_active %}inactive{% endif %}">
+      <td><input type="checkbox" name="student" value="{{ st.pk }}" form="bulk"></td>
+      <td>{{ st.full_name }}{% if not st.user.is_active %} <span class="tag">вход закрыт</span>{% endif %}</td>
+      <td class="mono">{{ st.user.username }}</td>
+      <td class="nowrap">
+        <details class="menu"><summary>⋯</summary>
+          <div class="menu-body">
+            <form method="post" action="{% url 'student_action' st.pk %}">{% csrf_token %}
+              <button name="action" value="reset" class="link">Сгенерировать новый пароль</button><br>
+              <button name="action" value="toggle" class="link">{% if st.user.is_active %}Закрыть вход{% else %}Открыть вход{% endif %}</button><br>
+              <button name="action" value="delete" class="link danger" data-confirm="Удалить ученика {{ st.full_name }} и все его работы?">Удалить</button>
+            </form>
+            <form method="post" action="{% url 'student_action' st.pk %}" class="row">{% csrf_token %}
+              <input type="hidden" name="action" value="set_password">
+              <input type="text" name="password" placeholder="новый пароль" minlength="6" required autocomplete="off" class="mono" size="12">
+              <button class="btn small">Задать пароль</button>
+            </form>
+            {% if other_groups %}<form method="post" action="{% url 'student_action' st.pk %}" class="row">{% csrf_token %}
+              <input type="hidden" name="action" value="move">
+              <select name="group">{% for g in other_groups %}<option value="{{ g.pk }}">{{ g.name }}</option>{% endfor %}</select>
+              <button class="btn small">Перевести</button>
+            </form>{% endif %}
+          </div>
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <button class="btn" form="bulk" data-confirm="Сгенерировать новые пароли (для отмеченных или, если никто не отмечен, — для всего класса)? Старые пароли перестанут работать.">Выдать новые пароли</button>
+  <p class="muted small">Пароли хранятся в зашифрованном виде, поэтому посмотреть старый пароль нельзя — только сгенерировать новый или задать свой (меню ⋯ у ученика).</p>
+  {% else %}<p class="muted">Учеников пока нет.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Добавить учеников</h2>
+  <form method="post">{% csrf_token %}
+    <label>{{ form.names.label }}{{ form.names }}</label>
+    <label>{{ form.prefix.label }}{{ form.prefix }}</label>
+    <button class="btn primary">Создать логины и пароли</button>
+  </form>
+  <p class="muted small">Логин составляется из фамилии и первой буквы имени (ivanov.i), пароль — случайный, 8 символов без похожих букв и цифр.</p>
+
+  <h2>Класс</h2>
+  <form method="post" action="{% url 'group_rename' group.pk %}" class="row">{% csrf_token %}
+    {{ rename.name }} <button class="btn">Переименовать</button>
+  </form>
+  <form method="post" action="{% url 'group_delete' group.pk %}">{% csrf_token %}
+    <button class="btn danger" data-confirm="Удалить класс «{{ group.name }}», всех его учеников и их работы?">Удалить класс</button>
+  </form>
+</section>
+</div>
+{% endblock %}

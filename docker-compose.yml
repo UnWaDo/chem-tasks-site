@@ -1,0 +1,21 @@
+# PostgreSQL для локальной разработки: docker compose up -d
+# Логин/пароль/база совпадают со значениями по умолчанию в config/settings.py (только для своего компьютера!).
+name: tasks-site
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16}
+    environment:
+      POSTGRES_DB: chem
+      POSTGRES_USER: chem
+      POSTGRES_PASSWORD: chem
+      # локаль ICU ru-RU: регистронезависимый поиск по кириллице и сортировка с «Ё» на своём месте
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=ru-RU"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:

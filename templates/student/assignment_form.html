@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load chem_tags static %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+{% if preview %}<div class="msg info">Предпросмотр: так задание видит ученик. Сохранение отключено.</div>
+{% else %}<p class="crumbs"><a href="{% url 'student_home' %}">Мои задания</a> /</p>{% endif %}
+<h1>{{ assignment.title }}</h1>
+{% if assignment.description %}<div class="card description">{{ assignment.description|linebreaksbr }}</div>{% endif %}
+{% if assignment.due_at %}<p class="small">Сдать до {{ assignment.due_at|date:"d.m.Y H:i" }}{% if late %} — <span class="warn-text">срок прошёл</span>{% endif %}</p>{% endif %}
+
+<details class="card help small">
+  <summary>Как записывать формулы</summary>
+  <ul>
+    <li>Индексы — обычными цифрами: <code>H2SO4</code>, <code>Ca(OH)2</code>. Регистр важен: <code>Co</code> — кобальт, <code>CO</code> — угарный газ.</li>
+    <li>Коэффициент пишется в маленьком поле перед веществом; 1 можно не писать.</li>
+    <li>Ионы: <code>SO4^2-</code>, <code>Fe^3+</code>, <code>OH-</code>. Кристаллогидраты: <code>CuSO4*5H2O</code>.</li>
+    <li>Чтобы добавить вещество, нажмите «+», чтобы убрать — «×».</li>
+  </ul>
+</details>
+
+{% if water_mode %}
+<div class="msg warning water-notice">💧 {% if water_mode == "all" %}В этом задании вода не показана{% else %}В некоторых уравнениях этого задания вода не показана{% endif %}:
+  если она участвует в реакции, добавьте её сами в нужную часть уравнения.</div>
+{% endif %}
+
+<form method="post" id="answer-form" {% if preview %}onsubmit="return false"{% endif %}>{% csrf_token %}
+{% for it in items %}
+{% with view=it.view item=it.item form=it.form %}
+<div class="card task" data-task>
+  <div class="task-head">
+    <span class="num">{{ it.n }}</span>
+    <span class="hints small">
+      {% if view.show_count %}Допишите недостающие вещества и расставьте коэффициенты.{% else %}Допишите недостающие вещества (сколько нужно) и расставьте коэффициенты.{% endif %}
+    </span>
+  </div>
+  <div class="answer-eq">
+    {% for side_code in "LR" %}
+      {% with side=form|get:side_code %}
+      <div class="side" data-item="{{ item.id }}" data-side="{{ side_code }}" data-next="{{ side.rows|length }}">
+        {% for r in side.rows %}
+        <span class="trow {{ r.t }}"{% if r.t == "fixed" %} data-note-html="{{ r.note|markup }}" data-mark="{{ r.mark }}"{% endif %}>
+          <input class="coef" name="a_{{ item.id }}_{{ side_code }}_{{ forloop.counter0 }}_c" value="{{ r.c }}" inputmode="numeric" maxlength="3" placeholder="1" autocomplete="off" aria-label="коэффициент">
+          {% if r.t == "fixed" %}
+            <span class="formula-fixed">{% term None r.f r.note r.mark %}</span>
+            <input type="hidden" name="a_{{ item.id }}_{{ side_code }}_{{ forloop.counter0 }}_f" value="{{ r.f }}">
+          {% else %}
+            <input class="f" name="a_{{ item.id }}_{{ side_code }}_{{ forloop.counter0 }}_f" value="{{ r.f }}" placeholder="формула" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="формула">
+          {% endif %}
+          <input type="hidden" name="a_{{ item.id }}_{{ side_code }}_{{ forloop.counter0 }}_t" value="{{ r.t }}">
+          {% if r.t == "extra" %}<button type="button" class="rm" title="Убрать вещество">×</button>{% endif %}
+        </span>
+        {% endfor %}
+        {% if side.can_add %}<button type="button" class="add" title="Добавить вещество">+</button>{% endif %}
+      </div>
+      {% if side_code == "L" %}<span class="arrow-input" aria-hidden="true">⟶</span>{% endif %}
+      {% endwith %}
+    {% endfor %}
+  </div>
+  <div class="eq-render" aria-live="polite">
+    <span class="eq"><span class="render-side" data-render="L"></span>{{ item.reaction.arrow_html }}<span class="render-side" data-render="R"></span></span>
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+{% if not preview %}
+  {% if accepts %}
+  <div class="actions sticky">
+    <button class="btn" name="action" value="save">Сохранить черновик</button>
+    <button class="btn primary" name="action" value="submit" data-confirm="Сдать работу? После сдачи изменить ответы будет нельзя.">Сдать работу</button>
+    <span class="muted small" id="autosave-note"></span>
+  </div>
+  {% else %}
+  <div class="msg error">Срок сдачи истёк — работа не принимается.</div>
+  {% endif %}
+{% endif %}
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/answer.js' %}"></script>{% endblock %}

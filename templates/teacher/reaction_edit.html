@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if reaction %}Реакция{% else %}Новая реакция{% endif %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'reaction_list' %}">Реакции</a> /</p>
+<h1>{% if reaction %}Реакция №{{ reaction.pk }}{% else %}Новая реакция{% endif %}</h1>
+
+<div class="grid2 wide-left">
+<section class="card">
+<form method="post">{% csrf_token %}
+  <label for="eq-text">{{ form.text.label }}</label>
+  {% include "teacher/_symbols.html" with target="eq-text" %}
+  {{ form.text }}
+  {{ form.text.errors }}
+  <div class="live-preview" data-live-preview="{% url 'reaction_live_preview' %}" data-source="eq-text"
+       {% if reaction %}data-exclude="{{ reaction.pk }}"{% endif %}>
+    <span class="muted small">Предпросмотр:</span>
+    <div class="live-body">{% if reaction %}<div class="eq-line">{{ reaction.html }}</div>{% endif %}</div>
+  </div>
+  {% if row %}
+    <div class="analysis">{% include "teacher/_analysis.html" %}</div>
+    {% if not row.error %}
+      <input type="hidden" name="confirm" value="1">
+      <input type="hidden" name="checked_text" value="{{ form.text.value }}">
+      <p class="muted">Выберите вариант и нажмите «Сохранить» ещё раз.</p>
+    {% endif %}
+  {% endif %}
+  {% include "teacher/_tag_picker.html" %}
+  <label>{{ form.comment.label }} {{ form.comment }}</label>
+  <button class="btn primary">Сохранить</button>
+</form>
+</section>
+
+<section class="card help">
+  {% include "teacher/_format_help.html" %}
+</section>
+</div>
+
+{% if reaction %}
+<section class="card">
+  <h2>Используется в заданиях</h2>
+  {% for it in usage %}<p><a href="{% url 'assignment_detail' it.assignment_id %}">{{ it.assignment.title }}</a></p>
+  {% empty %}<p class="muted">Нигде.</p>
+  <form method="post" action="{% url 'reaction_delete' reaction.pk %}">{% csrf_token %}
+    <button class="btn danger" data-confirm="Удалить реакцию?">Удалить реакцию</button>
+  </form>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/symbols.js' %}"></script>{% endblock %}

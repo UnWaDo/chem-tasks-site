@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Задания{% endblock %}
+{% block content %}
+<h1>Задания</h1>
+<div class="actions"><a class="btn primary" href="{% url 'assignment_new' %}">+ Новое задание</a></div>
+<table class="table">
+  <tr><th>Название</th><th>Классы</th><th>Реакций</th><th>Срок</th><th>Сдано</th><th>Статус</th></tr>
+  {% for a in assignments %}
+  <tr>
+    <td><a href="{% url 'assignment_detail' a.pk %}">{{ a.title }}</a></td>
+    <td>{% for g in a.groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">—</span>{% endfor %}</td>
+    <td>{{ a.n_items }}</td>
+    <td>{{ a.due_at|date:"d.m.Y H:i"|default:"—" }}</td>
+    <td><a href="{% url 'assignment_results' a.pk %}">{{ a.n_sub }}</a></td>
+    <td>{% if a.is_published %}<span class="tag ok">опубликовано</span>{% else %}<span class="tag">черновик</span>{% endif %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="6" class="muted">Заданий пока нет.</td></tr>{% endfor %}
+</table>
+{% endblock %}

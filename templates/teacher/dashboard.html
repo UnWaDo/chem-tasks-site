@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Обзор{% endblock %}
+{% block content %}
+<h1>Обзор</h1>
+<div class="stats">
+  <a class="stat card" href="{% url 'group_list' %}"><b>{{ stats.groups }}</b><span>классов</span></a>
+  <a class="stat card" href="{% url 'group_list' %}"><b>{{ stats.students }}</b><span>учеников</span></a>
+  <a class="stat card" href="{% url 'reaction_list' %}"><b>{{ stats.reactions }}</b><span>реакций в базе</span></a>
+  <a class="stat card" href="{% url 'assignment_list' %}"><b>{{ stats.assignments }}</b><span>заданий</span></a>
+</div>
+
+<div class="actions">
+  <a class="btn primary" href="{% url 'assignment_new' %}">+ Новое задание</a>
+  <a class="btn" href="{% url 'reaction_import' %}">Загрузить реакции</a>
+  <a class="btn" href="{% url 'group_list' %}">Добавить учеников</a>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>Апелляции на рассмотрении</h2>
+    {% for ap in open_appeals %}
+      <p><a href="{% url 'submission_detail' ap.answer.submission.pk %}#item-{{ ap.answer.item_id }}">{{ ap.answer.submission.student.student.full_name|default:ap.answer.submission.student.username }}</a>
+        — {{ ap.answer.submission.assignment.title }}<br><span class="muted">{{ ap.text|truncatechars:120 }}</span></p>
+    {% empty %}<p class="muted">Нет.</p>{% endfor %}
+  </section>
+  <section class="card">
+    <h2>Ждут открытия результатов</h2>
+    {% for a in waiting %}
+      <p><a href="{% url 'assignment_results' a.pk %}">{{ a.title }}</a> — непоказанных работ: {{ a.n }}</p>
+    {% empty %}<p class="muted">Нет.</p>{% endfor %}
+  </section>
+</div>
+
+<section class="card">
+  <h2>Последние сданные работы</h2>
+  <table class="table">
+    {% for s in recent %}
+    <tr><td>{{ s.submitted_at|date:"d.m H:i" }}</td>
+      <td>{{ s.student.student.full_name|default:s.student.username }}</td>
+      <td><a href="{% url 'assignment_results' s.assignment_id %}">{{ s.assignment.title }}</a></td>
+      <td><a href="{% url 'submission_detail' s.pk %}">{{ s.percent }}%</a></td></tr>
+    {% empty %}<tr><td class="muted">Пока нет.</td></tr>{% endfor %}
+  </table>
+</section>
+{% endblock %}

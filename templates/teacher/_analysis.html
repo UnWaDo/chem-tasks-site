@@ -1,0 +1,41 @@
+{# Строка анализа уравнения: row — результат analyze_row #}
+{% load chem_tags %}
+{% if row.error %}
+  <div class="status error">Ошибка разбора: {{ row.error }}</div>
+{% else %}
+  {% with a=row.analysis %}
+  <div class="eq-line">{{ row.html }}</div>
+  {% if a.ok and not a.ambiguous %}
+    <div class="status ok">✓ уравнено</div>
+  {% elif a.ok %}
+    <div class="status ok">✓ уравнено</div>
+    <div class="status warning">Это уравнение можно уравнять несколькими независимыми способами — убедитесь, что коэффициенты верные.</div>
+  {% elif a.impossible %}
+    <div class="status error">Не удаётся уравнять — проверьте формулы веществ.</div>
+  {% elif a.reducible %}
+    <div class="status warning">Уравнено, но коэффициенты можно сократить.</div>
+  {% elif not a.had_coefficients %}
+    <div class="status info">Коэффициенты не указаны — подобраны автоматически.</div>
+  {% else %}
+    <div class="status warning">Не уравнено. Разность (реагенты − продукты):
+      {% for el, d in a.imbalance.items %}{{ el }} {% if d > 0 %}+{% endif %}{{ d }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+  {% endif %}
+  {% if a.ambiguous and a.options and not a.ok %}
+    <div class="status warning">Есть несколько независимых способов уравнять (вероятно, это сумма нескольких процессов). Выберите верный вариант.</div>
+  {% endif %}
+  {% if row.options %}
+    <div class="options">
+      {% for o in row.options %}
+        <label class="option"><input type="radio" name="choice_{{ row.n }}" value="{{ o.value }}" {% if row.choice == o.value %}checked{% endif %}> {{ o.html }}</label>
+      {% endfor %}
+      <label class="option"><input type="radio" name="choice_{{ row.n }}" value="asis" {% if row.choice == "asis" %}checked{% endif %}> оставить как написано</label>
+    </div>
+  {% endif %}
+  {% endwith %}
+  {% if row.db_dups %}
+    <div class="status dup">Уже есть в базе:
+      {% for r in row.db_dups %}<a href="{% url 'reaction_edit' r.pk %}" target="_blank">{{ r.html }}</a> {% include "teacher/_tags.html" %}{% if not forloop.last %}; {% endif %}{% endfor %}
+    </div>
+  {% endif %}
+  {% if row.batch_dup %}<div class="status dup">Повтор строки {{ row.batch_dup }} этого списка.</div>{% endif %}
+{% endif %}

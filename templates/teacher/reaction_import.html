@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Загрузка реакций{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'reaction_list' %}">Реакции</a> /</p>
+<h1>Загрузка реакций</h1>
+<div class="grid2 wide-left">
+<section class="card">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <input type="hidden" name="step" value="preview">
+    <label for="import-text">Реакции, по одной на строке</label>
+    {% include "teacher/_symbols.html" with target="import-text" %}
+    <textarea name="text" id="import-text" rows="16" class="mono" placeholder="{{ example }}">{{ text }}</textarea>
+    <label>…или текстовый файл (.txt, UTF-8 или Windows-1251)<input type="file" name="file" accept=".txt,.csv,text/plain"></label>
+    {% include "teacher/_tag_picker.html" %}
+    <p class="muted small">Выбранные тэги получат все загружаемые реакции.</p>
+    <button class="btn primary">Проверить</button>
+  </form>
+</section>
+<section class="card help">
+  {% include "teacher/_format_help.html" %}
+  <p class="muted small">Строки, начинающиеся с <code>#</code>, пропускаются.</p>
+</section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/symbols.js' %}"></script>{% endblock %}

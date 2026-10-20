@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load chem_tags %}
+{% block title %}Мои задания{% endblock %}
+{% block content %}
+<h1>Мои задания</h1>
+<section>
+  <h2>К выполнению</h2>
+  {% for r in todo %}
+  <div class="card task-card {% if not r.open %}muted{% endif %}">
+    <div>
+      <b>{% if r.open %}<a href="{% url 'student_assignment' r.a.pk %}">{{ r.a.title }}</a>{% else %}{{ r.a.title }}{% endif %}</b>
+      {% if r.sub %}<span class="tag">черновик сохранён</span>{% endif %}
+    </div>
+    <div class="small">
+      {% if not r.open %}откроется {{ r.a.opens_at|date:"d.m.Y H:i" }}
+      {% elif r.a.due_at %}сдать до {{ r.a.due_at|date:"d.m.Y H:i" }}{% if r.a.is_late %} — <span class="warn-text">срок прошёл{% if not r.accepts %}, работа не принимается{% endif %}</span>{% endif %}
+      {% else %}без срока{% endif %}
+    </div>
+  </div>
+  {% empty %}<p class="muted">Нет заданий к выполнению.</p>{% endfor %}
+</section>
+<section>
+  <h2>Сданные</h2>
+  {% for r in done %}
+  <div class="card task-card">
+    <div><b><a href="{% url 'student_assignment' r.a.pk %}">{{ r.a.title }}</a></b></div>
+    <div class="small">сдано {{ r.sub.submitted_at|date:"d.m.Y H:i" }} —
+      {% if r.visible %}<b>{{ r.sub.score|score }} из {{ r.sub.max_score|score }}</b> ({{ r.sub.percent }}%)
+      {% else %}результат пока не опубликован{% endif %}</div>
+  </div>
+  {% empty %}<p class="muted">Пока нет.</p>{% endfor %}
+</section>
+{% endblock %}

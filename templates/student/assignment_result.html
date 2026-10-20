@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load chem_tags %}
+{% block title %}{{ assignment.title }} — результат{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'student_home' %}">Мои задания</a> /</p>
+<h1>{{ assignment.title }}</h1>
+<p>Работа сдана {{ sub.submitted_at|date:"d.m.Y H:i" }}{% if sub.is_late %} (после срока){% endif %}.</p>
+
+{% if not visible %}
+  <div class="card">
+    {% if assignment.results_mode == "date" and assignment.results_date %}
+      Результаты будут доступны {{ assignment.results_date|date:"d.m.Y H:i" }}.
+    {% else %}
+      Результаты появятся после проверки учителем.
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card score-box">
+    <b>{{ sub.score|score }} из {{ sub.max_score|score }}</b> <span class="muted">({{ sub.percent }}%)</span>
+  </div>
+  {% for row in rows %}
+  {% with a=row.answer %}
+  <div class="card item verdict-{{ a.final_verdict|default:'empty' }}">
+    <div class="item-head">
+      <span class="num">{{ row.n }}</span>
+      <span class="verdict">{% if a.final_verdict == "correct" %}✓ верно{% elif a.final_verdict == "partial" %}½ частично верно{% else %}✗ неверно{% endif %} — {{ a.score|score }} б.</span>
+    </div>
+    <div class="grid-qa">
+      <div class="muted small">Ваш ответ:</div><div class="eq-big">{{ row.student_html }}</div>
+      {% if a.feedback and a.manual_score is None %}<div class="muted small">Проверка:</div><div>{{ a.feedback }}</div>{% endif %}
+      {% if a.manual_comment %}<div class="muted small">Учитель:</div><div>{{ a.manual_comment }}</div>{% endif %}
+      {% if assignment.show_correct_answers %}<div class="muted small">Правильно:</div><div>{{ row.item.reaction.html }}</div>{% endif %}
+    </div>
+    {% for ap in row.appeals %}
+      <div class="appeal {{ ap.status }} small">
+        <b>Апелляция</b> ({{ ap.created_at|date:"d.m H:i" }}): {{ ap.get_status_display }}
+        <blockquote>{{ ap.text|linebreaksbr }}</blockquote>
+        {% if ap.response %}<div>Ответ учителя: {{ ap.response|linebreaksbr }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    {% if row.can_appeal %}
+      <details class="small"><summary>Не согласны с оценкой? Подать апелляцию</summary>
+        <form method="post" action="{% url 'appeal_create' assignment.pk %}">{% csrf_token %}
+          <input type="hidden" name="answer" value="{{ a.pk }}">
+          <textarea name="text" rows="3" required placeholder="Объясните, почему ваш ответ верен"></textarea>
+          <button class="btn">Отправить учителю</button>
+        </form>
+      </details>
+    {% endif %}
+  </div>
+  {% endwith %}
+  {% endfor %}
+{% endif %}
+{% endblock %}

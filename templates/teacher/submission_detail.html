@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load chem_tags %}
+{% block title %}Работа: {{ student.full_name|default:sub.student.username }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a> / <a href="{% url 'assignment_results' assignment.pk %}">Результаты</a> /</p>
+<h1>{{ student.full_name|default:sub.student.username }} <span class="muted">{{ student.group.name }}</span></h1>
+<div class="card summary">
+  <div><b>Статус:</b> {{ sub.get_status_display }}{% if sub.submitted_at %}, {{ sub.submitted_at|date:"d.m.Y H:i" }}{% endif %}{% if sub.is_late %} <span class="tag warn">после срока</span>{% endif %}</div>
+  <div><b>Баллы:</b> {{ sub.score|score }} из {{ sub.max_score|score }}{% if sub.percent is not None %} ({{ sub.percent }}%){% endif %}</div>
+  <div><b>Ученик видит результат:</b> {{ sub.results_visible|yesno:"да,нет" }}</div>
+</div>
+<form method="post" class="actions">{% csrf_token %}
+  <button class="btn" name="action" value="regrade">Перепроверить</button>
+  {% if assignment.results_mode != "immediate" %}<button class="btn" name="action" value="release">{% if sub.released %}Скрыть результат от ученика{% else %}Открыть результат ученику{% endif %}</button>{% endif %}
+  {% if sub.is_submitted %}<button class="btn" name="action" value="reset" data-confirm="Вернуть работу ученику на доработку? Оценка будет сброшена до повторной сдачи.">Вернуть на доработку</button>{% endif %}
+</form>
+
+{% for row in rows %}
+{% with a=row.answer %}
+<div class="card item verdict-{{ a.final_verdict|default:'empty' }}" id="item-{{ row.item.id }}">
+  <div class="item-head">
+    <span class="num">{{ row.n }}</span>
+    <span class="verdict">{% if a.final_verdict == "correct" %}✓ верно{% elif a.final_verdict == "partial" %}½ частично{% else %}✗ неверно{% endif %} — {{ a.score|score }} б.</span>
+  </div>
+  <div class="grid-qa">
+    <div class="muted small">Задание:</div><div>{{ row.preview }}</div>
+    <div class="muted small">Ответ ученика:</div><div class="eq-big">{{ row.student_html }}</div>
+    <div class="muted small">Эталон:</div><div>{{ row.item.reaction.html }}
+      {% if row.alternatives %}<div class="small">Также принимаются: {% for r in row.alternatives %}{{ r.html }}{% if not forloop.last %}; {% endif %}{% endfor %}</div>{% endif %}
+      {% if a.matched_reaction and a.matched_reaction.pk != row.item.reaction_id %}<div class="small">Ответ сопоставлен с вариантом: {{ a.matched_reaction.html }}</div>{% endif %}</div>
+    <div class="muted small">Автопроверка:</div><div>{{ a.feedback|default:"—" }} ({{ a.auto_score|score }} б.)</div>
+  </div>
+
+  {% if a %}
+  <details {% if a.manual_score is not None or row.appeals %}open{% endif %}>
+    <summary>Изменить оценку вручную</summary>
+    <form method="post" class="row">{% csrf_token %}
+      <input type="hidden" name="action" value="score"><input type="hidden" name="answer" value="{{ a.pk }}">
+      <select name="manual_score">
+        <option value="" {% if a.manual_score is None %}selected{% endif %}>как при автопроверке</option>
+        <option value="1" {% if a.manual_score == 1 %}selected{% endif %}>1 — верно</option>
+        <option value="0.5" {% if a.manual_score == 0.5 %}selected{% endif %}>0,5 — частично</option>
+        <option value="0" {% if a.manual_score == 0 %}selected{% endif %}>0 — неверно</option>
+      </select>
+      <input name="manual_comment" value="{{ a.manual_comment }}" placeholder="комментарий для ученика" class="grow">
+      <button class="btn">Сохранить</button>
+    </form>
+    {% if a.verdict != "correct" and a.verdict != "empty" %}
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="add_alternative"><input type="hidden" name="answer" value="{{ a.pk }}">
+      <button class="btn small" data-confirm="Добавить ответ ученика в базу как ещё один правильный вариант для этой реакции и перепроверить все работы задания?">Считать такой ответ правильным (для всех) и перепроверить</button>
+    </form>
+    {% endif %}
+  </details>
+  {% endif %}
+
+  {% for ap in row.appeals %}
+  <div class="appeal {{ ap.status }}">
+    <div><b>Апелляция</b> {{ ap.created_at|date:"d.m.Y H:i" }} — {{ ap.get_status_display }}</div>
+    <blockquote>{{ ap.text|linebreaksbr }}</blockquote>
+    {% if ap.status == "open" %}
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="appeal"><input type="hidden" name="appeal" value="{{ ap.pk }}">
+      <textarea name="response" rows="2" placeholder="Ответ ученику"></textarea>
+      <div class="row">
+        <label class="inline">Балл при удовлетворении:
+          <select name="score"><option value="1">1</option><option value="0.5">0,5</option><option value="">не менять</option></select></label>
+        <button class="btn primary" name="decision" value="accept">Удовлетворить</button>
+        <button class="btn" name="decision" value="reject">Отклонить</button>
+      </div>
+      <p class="muted small">Если ошибка в самом задании — исправьте реакцию (✎ на странице задания) или нажмите «Считать такой ответ правильным», затем «Перепроверить работы».</p>
+    </form>
+    {% elif ap.response %}<div class="small">Ответ: {{ ap.response|linebreaksbr }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endwith %}
+{% endfor %}
+{% endblock %}

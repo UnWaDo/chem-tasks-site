@@ -1,0 +1,14 @@
+{# Краткий результат разбора уравнения для живого предпросмотра (row — analyze_row) #}
+{% if row.error %}
+  <div class="status error">{{ row.error }}</div>
+{% else %}
+  {% with a=row.analysis %}
+  <div class="eq-line">{{ row.html }}</div>
+  {% if a.ok %}<div class="status ok">✓ уравнено{% if a.ambiguous %}; есть и другие способы уравнять — проверьте коэффициенты{% endif %}</div>
+  {% elif a.impossible %}<div class="status error">Не удаётся уравнять — проверьте формулы.</div>
+  {% elif a.reducible %}<div class="status warning">Коэффициенты можно сократить: {{ row.options.0.html }}</div>
+  {% elif row.options %}<div class="status warning">{% if a.had_coefficients %}Не уравнено.{% else %}Коэффициенты не указаны.{% endif %} Вариант: {{ row.options.0.html }}{% if row.options|length > 1 %} (и ещё {{ row.options|length|add:"-1" }}){% endif %}</div>
+  {% endif %}
+  {% endwith %}
+  {% if row.db_dups %}<div class="status dup">Такая реакция уже есть в базе (№{% for r in row.db_dups %}{{ r.pk }}{% if not forloop.last %}, {% endif %}{% endfor %}).</div>{% endif %}
+{% endif %}

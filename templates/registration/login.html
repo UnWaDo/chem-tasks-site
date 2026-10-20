@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="login-box card">
+  <h1>Вход</h1>
+  <p class="muted">Логин и пароль выдаёт учитель.</p>
+  {% if form.errors %}<div class="msg error">Неверный логин или пароль.</div>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <label>Логин<input name="username" autofocus autocomplete="username" autocapitalize="none" value="{{ form.username.value|default:'' }}" required></label>
+    <label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn primary wide">Войти</button>
+  </form>
+</div>
+{% endblock %}

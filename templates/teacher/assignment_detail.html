@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load chem_tags %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_list' %}">Задания</a> /</p>
+<h1>{{ assignment.title }}
+  {% if assignment.is_published %}<span class="tag ok">опубликовано</span>{% else %}<span class="tag">черновик</span>{% endif %}</h1>
+
+<div class="card summary">
+  <div><b>Классы:</b> {% for g in assignment.groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="warn-text">не назначено</span>{% endfor %}</div>
+  <div><b>Сроки:</b> {% if assignment.opens_at %}с {{ assignment.opens_at|date:"d.m.Y H:i" }} {% endif %}{% if assignment.due_at %}до {{ assignment.due_at|date:"d.m.Y H:i" }}{% if assignment.allow_late %} (можно позже){% endif %}{% else %}без срока{% endif %}</div>
+  <div><b>По умолчанию:</b>
+    реагенты — {{ assignment.show_reactants|yesno:"показаны,скрыты" }};
+    продукты — {{ assignment.show_products|yesno:"показаны,скрыты" }};
+    число веществ — {{ assignment.show_count|yesno:"показано,не показано" }};
+    вода — {{ assignment.hide_water|yesno:"скрыта,как обычно" }}</div>
+  <div><b>Результаты:</b> {{ assignment.get_results_mode_display }}{% if assignment.results_mode == "date" %} ({{ assignment.results_date|date:"d.m.Y H:i" }}){% endif %}{% if assignment.show_correct_answers %}, с правильными ответами{% endif %}</div>
+  <div><b>Сдано работ:</b> <a href="{% url 'assignment_results' assignment.pk %}">{{ n_sub }}</a></div>
+</div>
+
+<div class="actions">
+  <a class="btn" href="{% url 'assignment_edit' assignment.pk %}">Настройки</a>
+  <a class="btn" href="{% url 'assignment_add' assignment.pk %}">+ Добавить реакции</a>
+  <a class="btn" href="{% url 'assignment_check' assignment.pk %}">Проверка неоднозначностей{% if pending %} <span class="badge">{{ pending }}</span>{% endif %}</a>
+  {% if rows %}<button class="btn" form="items-form" name="action" value="preview" formtarget="_blank" title="Сохранить настройки показа и открыть задание глазами ученика">Как видит ученик</button>
+  {% else %}<a class="btn" href="{% url 'assignment_preview' assignment.pk %}" target="_blank">Как видит ученик</a>{% endif %}
+  <a class="btn" href="{% url 'assignment_results' assignment.pk %}">Результаты</a>
+  <form method="post" action="{% url 'assignment_publish' assignment.pk %}" class="inline">{% csrf_token %}
+    {% if assignment.is_published %}<button class="btn" name="action" value="unpublish">Скрыть от учеников</button>
+    {% else %}<button class="btn primary" name="action" value="publish">Опубликовать</button>{% endif %}
+  </form>
+</div>
+
+{% if pending %}<div class="msg warning">В базе есть реакции, подходящие под то, что увидит ученик ({{ pending }}). <a href="{% url 'assignment_check' assignment.pk %}">Посмотреть и решить</a>, считать ли их правильными ответами.</div>{% endif %}
+
+{% if rows %}
+<form method="post" id="items-form" data-show_reactants="{{ assignment.show_reactants|yesno:'1,0' }}"
+      data-show_products="{{ assignment.show_products|yesno:'1,0' }}" data-show_count="{{ assignment.show_count|yesno:'1,0' }}"
+      data-hide_water="{{ assignment.hide_water|yesno:'1,0' }}">{% csrf_token %}
+<p class="muted small">Нажимайте на вещество, чтобы переключать: <span class="chip-demo">авто</span> → <span class="chip-demo shown">показать</span> → <span class="chip-demo hidden">скрыть</span>. «Авто» — как настроено для стороны уравнения. Строка «Ученик видит» обновляется сразу; не забудьте сохранить.</p>
+{% for row in rows %}
+{% with item=row.item view=row.view %}
+<div class="card item" id="item-{{ item.id }}" data-item>
+  <div class="item-head">
+    <span class="num">{{ forloop.counter }}</span>
+    <span class="eq-big">{{ item.reaction.html }}</span>
+    <span class="item-tools">
+      <a href="{% url 'reaction_edit' item.reaction_id %}?next={{ request.path|urlencode }}" title="Изменить реакцию">✎</a>
+      <button class="link" formaction="{% url 'item_action' assignment.pk item.id %}" name="action" value="up" title="Выше">↑</button>
+      <button class="link" formaction="{% url 'item_action' assignment.pk item.id %}" name="action" value="down" title="Ниже">↓</button>
+      <button class="link danger" formaction="{% url 'item_action' assignment.pk item.id %}" name="action" value="remove" title="Убрать из задания" data-confirm="Убрать реакцию из задания? Ответы учеников на неё будут удалены.">✕</button>
+    </span>
+  </div>
+  <div class="item-settings">
+    {% for f, label in flags %}
+      {% with own=item|attr:f default=assignment|attr:f %}
+      <label class="mini">{{ label }}
+        <select name="{{ f }}_{{ item.id }}" data-flag="{{ f }}" class="{% if own is not None %}changed{% endif %}">
+          <option value="" {% if own is None %}selected{% endif %}>как в задании ({{ default|yesno:"да,нет" }})</option>
+          <option value="1" {% if own is True %}selected{% endif %}>да</option>
+          <option value="0" {% if own is False %}selected{% endif %}>нет</option>
+        </select>
+      </label>
+      {% endwith %}
+    {% endfor %}
+  </div>
+  <div class="chips">
+    {% for slot in view.left %}{% include "teacher/_chip.html" %}{% endfor %}
+    <span class="arrow-small">⟶</span>
+    {% for slot in view.right %}{% include "teacher/_chip.html" %}{% endfor %}
+  </div>
+  <div class="preview" data-preview><span class="muted small">Ученик видит:</span> {{ row.preview }}</div>
+  {% if row.alternatives %}
+    <div class="alts small">Также принимаются: {% for r in row.alternatives %}{{ r.html }}{% if not forloop.last %}; {% endif %}{% endfor %}</div>
+  {% endif %}
+</div>
+{% endwith %}
+{% endfor %}
+<div class="actions sticky">
+  <button class="btn primary">Сохранить настройки показа</button>
+  <span class="unsaved small" hidden>Есть несохранённые изменения</span>
+  <button class="btn" name="action" value="reset_items" data-confirm="Сбросить индивидуальные настройки всех реакций к настройкам задания?">Сбросить к настройкам задания</button>
+</div>
+</form>
+{% else %}
+<div class="card"><p>В задании пока нет реакций. <a href="{% url 'assignment_add' assignment.pk %}">Добавить</a></p></div>
+{% endif %}
+
+<div class="actions danger-zone">
+  <form method="post" action="{% url 'assignment_copy' assignment.pk %}" class="inline">{% csrf_token %}<button class="btn">Создать копию</button></form>
+  <form method="post" action="{% url 'assignment_delete' assignment.pk %}" class="inline">{% csrf_token %}<button class="btn danger" data-confirm="Удалить задание вместе со всеми работами учеников?">Удалить задание</button></form>
+</div>
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/builder.js' %}"></script>{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load chem_tags %}
+{% block title %}Результаты: {{ assignment.title }}{% endblock %}
+{% block main_class %}container wide{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_list' %}">Задания</a> / <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a> /</p>
+<h1>Результаты</h1>
+<div class="actions">
+  <form method="post" action="{% url 'assignment_regrade' assignment.pk %}" class="inline">{% csrf_token %}
+    <button class="btn" title="Проверить заново все сданные работы по текущим реакциям и допустимым вариантам">Перепроверить работы</button></form>
+  {% if assignment.results_mode == "manual" %}
+  <form method="post" action="{% url 'assignment_release' assignment.pk %}" class="inline">{% csrf_token %}
+    {% if assignment.results_released %}<button class="btn" name="action" value="hide">Скрыть результаты</button>
+    {% else %}<button class="btn primary" name="action" value="show">Открыть результаты всем</button>{% endif %}
+  </form>
+  {% endif %}
+  <a class="btn" href="?format=csv">Скачать CSV</a>
+  {% if n_open_appeals %}<a class="btn" href="{% url 'appeal_list' %}">Апелляции <span class="badge">{{ n_open_appeals }}</span></a>{% endif %}
+</div>
+<p class="muted small">Показ результатов: {{ assignment.get_results_mode_display }}{% if assignment.results_mode == "date" %} — {{ assignment.results_date|date:"d.m.Y H:i" }}{% endif %}.
+  ✓ — верно, ½ — вещества верны, ✗ — неверно; рамка — оценка изменена вручную.</p>
+
+<div class="scroll-x">
+<table class="table results">
+  <tr><th>Ученик</th><th>Статус</th>{% for it in items %}<th title="{{ it.reaction.text }}">{{ forloop.counter }}</th>{% endfor %}<th>Баллы</th><th>%</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>{% if r.student %}{{ r.student.full_name }} <span class="muted small">{{ r.student.group.name }}</span>{% else %}{{ r.sub.student.username }}{% endif %}</td>
+    <td class="nowrap">
+      {% if not r.sub %}<span class="muted">не начинал</span>
+      {% elif not r.sub.is_submitted %}<span class="tag">черновик</span>
+      {% else %}<a href="{% url 'submission_detail' r.sub.pk %}">сдано {{ r.sub.submitted_at|date:"d.m H:i" }}</a>{% if r.sub.is_late %} <span class="tag warn">поздно</span>{% endif %}
+        {% if assignment.results_mode != "immediate" %}{% if r.sub.results_visible %}<span class="tag ok" title="ученик видит результат">👁</span>{% endif %}{% endif %}
+      {% endif %}
+    </td>
+    {% for c in r.cells %}
+      <td class="cell {{ c.verdict }}{% if c.manual %} manual{% endif %}">{% if c.score is not None %}{% if c.verdict == "correct" %}✓{% elif c.verdict == "partial" %}½{% elif c.verdict == "wrong" or c.verdict == "empty" %}✗{% endif %}{% endif %}</td>
+    {% endfor %}
+    <td>{% if r.sub.is_submitted %}{{ r.sub.score|score }} / {{ r.sub.max_score|score }}{% endif %}</td>
+    <td>{% if r.sub.is_submitted %}{{ r.sub.percent }}{% endif %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="99" class="muted">В назначенных классах нет учеников.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

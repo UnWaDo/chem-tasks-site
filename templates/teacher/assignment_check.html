@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Проверка неоднозначностей{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_list' %}">Задания</a> / <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a> /</p>
+<h1>Проверка на неоднозначность</h1>
+<p class="muted">Для каждой реакции задания сайт ищет в базе другие реакции, которые подходят под то, что увидит ученик
+  (те же показанные вещества с теми же пояснениями, те же условия, то же число веществ, если оно показано).
+  Решите, считать ли их тоже правильными ответами.</p>
+
+{% if not data %}
+  <div class="msg success">Неоднозначностей не найдено.</div>
+  {% if publish and not assignment.is_published %}
+  <form method="post" action="{% url 'assignment_publish' assignment.pk %}">{% csrf_token %}<button class="btn primary" name="action" value="publish">Опубликовать</button></form>
+  {% endif %}
+{% else %}
+<form method="post">{% csrf_token %}
+  {% for d in data %}
+  <div class="card item">
+    <div class="item-head"><span class="eq-big">{{ d.item.reaction.html }}</span></div>
+    <div class="preview"><span class="muted small">Ученик видит:</span> {{ d.preview }}</div>
+    <table class="table">
+      <tr><th>Подходящая реакция из базы</th><th>Считать правильным ответом?</th></tr>
+      {% for r in d.found %}
+      <tr class="{% if r in d.pending %}attn{% endif %}">
+        <td>{{ r.html }} {% include "teacher/_tags.html" %}</td>
+        <td class="nowrap">
+          <label class="inline"><input type="radio" name="dec_{{ d.item.id }}_{{ r.id }}" value="alt" {% if r.pk in d.accepted %}checked{% endif %}> да</label>
+          <label class="inline"><input type="radio" name="dec_{{ d.item.id }}_{{ r.id }}" value="no" {% if r.pk in d.dismissed %}checked{% endif %}> нет</label>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted small">Если варианты различаются условиями, которые ученик должен знать, — ответьте «нет» и, возможно, покажите ученику отличающее вещество или условие (в настройках показа).</p>
+  </div>
+  {% endfor %}
+  <div class="actions sticky">
+    <button class="btn primary">Сохранить решения</button>
+    {% if not assignment.is_published %}<button class="btn" name="publish" value="1">Сохранить и опубликовать</button>{% endif %}
+  </div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Добавить реакции{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'assignment_list' %}">Задания</a> / <a href="{% url 'assignment_detail' assignment.pk %}">{{ assignment.title }}</a> /</p>
+<h1>Добавить реакции в задание</h1>
+<form method="get" class="filters">
+  <input name="q" value="{{ q }}" placeholder="Поиск по формуле или тэгу">
+  {% include "teacher/_tag_filter.html" %}
+  <button class="btn">Найти</button>
+</form>
+<form method="post">{% csrf_token %}
+  <table class="table reactions">
+    <tr><th><input type="checkbox" data-check-all="ids"></th><th>Уравнение</th><th>Тэги</th></tr>
+    {% for r in reactions %}
+    <tr class="{% if r.pk in existing %}muted{% endif %}">
+      <td>{% if r.pk in existing %}✓{% else %}<input type="checkbox" name="ids" value="{{ r.pk }}">{% endif %}</td>
+      <td>{{ r.html }}</td><td>{% include "teacher/_tags.html" %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="3" class="muted">Ничего не найдено. <a href="{% url 'reaction_import' %}">Загрузить реакции</a></td></tr>{% endfor %}
+  </table>
+  <div class="actions sticky">
+    <button class="btn primary">Добавить отмеченные</button>
+    <button class="btn" name="stay" value="1">Добавить и продолжить выбор</button>
+    <a class="btn" href="{% url 'assignment_detail' assignment.pk %}">К заданию</a>
+  </div>
+</form>
+{% endblock %}

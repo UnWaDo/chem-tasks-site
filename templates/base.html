@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Задания по химии{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/site.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">⚗ Химия: задания</a>
+  {% if user.is_authenticated %}
+  <nav>
+    {% if user.is_staff %}
+      <a href="{% url 'teacher_dashboard' %}">Обзор</a>
+      <a href="{% url 'assignment_list' %}">Задания</a>
+      <a href="{% url 'reaction_list' %}">Реакции</a>
+      <a href="{% url 'group_list' %}">Классы</a>
+      <a href="{% url 'appeal_list' %}">Апелляции{% if open_appeals_count %} <span class="badge">{{ open_appeals_count }}</span>{% endif %}</a>
+    {% else %}
+      <a href="{% url 'student_home' %}">Мои задания</a>
+    {% endif %}
+  </nav>
+  <div class="user">
+    {% if user.student %}{{ user.student.full_name }}{% else %}{{ user.get_full_name|default:user.username }}{% endif %}
+    <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}<button class="link">Выйти</button></form>
+  </div>
+  {% endif %}
+</header>
+<main class="{% block main_class %}container{% endblock %}">
+  {% if messages %}
+  <div class="messages">
+    {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script src="{% static 'js/site.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Апелляции{% endblock %}
+{% block content %}
+<h1>Апелляции</h1>
+<section class="card">
+  <h2>На рассмотрении</h2>
+  <table class="table">
+    {% for ap in open %}
+    <tr><td class="nowrap">{{ ap.created_at|date:"d.m H:i" }}</td>
+      <td>{{ ap.answer.submission.student.student.full_name|default:ap.answer.submission.student.username }}</td>
+      <td>{{ ap.answer.submission.assignment.title }}</td>
+      <td>{{ ap.text|truncatechars:100 }}</td>
+      <td><a class="btn small" href="{% url 'submission_detail' ap.answer.submission_id %}#item-{{ ap.answer.item_id }}">Рассмотреть</a></td></tr>
+    {% empty %}<tr><td class="muted">Нет апелляций на рассмотрении.</td></tr>{% endfor %}
+  </table>
+</section>
+<section class="card">
+  <h2>Недавно рассмотренные</h2>
+  <table class="table">
+    {% for ap in resolved %}
+    <tr><td class="nowrap">{{ ap.resolved_at|date:"d.m H:i" }}</td>
+      <td>{{ ap.answer.submission.student.student.full_name|default:ap.answer.submission.student.username }}</td>
+      <td><a href="{% url 'submission_detail' ap.answer.submission_id %}#item-{{ ap.answer.item_id }}">{{ ap.answer.submission.assignment.title }}</a></td>
+      <td>{{ ap.get_status_display }}</td></tr>
+    {% empty %}<tr><td class="muted">Нет.</td></tr>{% endfor %}
+  </table>
+</section>
+{% endblock %}
